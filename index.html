@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pencarian Arsip Kantor Camat</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+    .header-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; }
+    .badge-path { background-color: #e2e3e5; color: #41464b; font-weight: normal; }
+  </style>
+</head>
+<body>
+
+<div class="container py-5">
+  <div class="card header-card shadow-sm mb-4">
+    <div class="card-body p-4 text-center">
+      <h2 class="fw-bold"><i class="fa-solid fa-folder-open me-2"></i>PENCARIAN ARSIP DIGITAL</h2>
+      <p class="mb-0">KANTOR CAMAT SEI KEPAYANG BARAT</p>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <form id="searchForm" onsubmit="handleSearch(event)">
+        <div class="input-group input-group-lg">
+          <input type="text" id="keyword" class="form-control" placeholder="Masukkan nama file atau kata kunci surat..." required>
+          <button class="btn btn-primary px-4" type="submit" id="btnSearch">
+            <i class="fa-solid fa-magnifying-glass me-2"></i>Cari File
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="loading" class="text-center my-5 d-none">
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+    <p class="mt-2 text-muted">Mencari file di seluruh folder arsip...</p>
+  </div>
+
+  <div id="resultsArea" class="card shadow-sm d-none">
+    <div class="card-header bg-white py-3">
+      <h5 class="mb-0 text-secondary" id="resultCount">Hasil Pencarian</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" style="width: 5%;">#</th>
+              <th scope="col" style="width: 40%;">Nama File</th>
+              <th scope="col" style="width: 35%;">Lokasi Folder Path</th>
+              <th scope="col" style="width: 20%;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="resultTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="notFoundAlert" class="alert alert-warning text-center shadow-sm d-none" role="alert">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i>File tidak ditemukan. Coba gunakan kata kunci lain.
+  </div>
+</div>
+
+<script>
+  // Link Web App Apps Script Anda
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxoCzYfouxBR1WST5zS-6TvS3CVHzrsJ54zb3fFPUf3V9TPS0-FGkXWJe3s29HRSjNU8w/exec";
+
+  function handleSearch(event) {
+    event.preventDefault();
+    const keyword = document.getElementById('keyword').value;
+
+    document.getElementById('loading').classList.remove('d-none');
+    document.getElementById('resultsArea').classList.add('d-none');
+    document.getElementById('notFoundAlert').classList.add('d-none');
+    document.getElementById('btnSearch').disabled = true;
+
+    // Panggil Apps Script sebagai API
+    fetch(`${SCRIPT_URL}?q=${encodeURIComponent(keyword)}`)
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('btnSearch').disabled = false;
+
+        if (!data || data.length === 0) {
+          document.getElementById('notFoundAlert').classList.remove('d-none');
+          return;
+        }
+
+        const tbody = document.getElementById('resultTableBody');
+        tbody.innerHTML = '';
+        document.getElementById('resultCount').innerText = `Ditemukan ${data.length} file`;
+
+        data.forEach((file, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td class="fw-bold text-muted">${index + 1}</td>
+            <td><i class="fa-solid fa-file-pdf text-danger me-2"></i><strong>${file.name}</strong></td>
+            <td><span class="badge badge-path text-wrap text-start">${file.path}</span></td>
+            <td>
+              <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Buka File
+              </a>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        document.getElementById('resultsArea').classList.remove('d-none');
+      })
+      .catch(error => {
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('btnSearch').disabled = false;
+        alert("Terjadi kesalahan saat mengambil data.");
+      });
+  }
+</script>
+
+</body>
+</html>
